@@ -60,6 +60,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PORT: ${APP_PORT}
       NODE_ENV: production
+      WB_API_TOKEN: ${WB_API_TOKEN}
+      GOOGLE_SHEETS_CREDENTIALS: ${GOOGLE_SHEETS_CREDENTIALS}
+      GOOGLE_SHEETS_SPREADSHEET_IDS: ${GOOGLE_SHEETS_SPREADSHEET_IDS}
 
     ports:
       - ${APP_PORT}:${APP_PORT}
@@ -67,8 +70,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - ./logs:/app/logs  
     networks:
       - postgres-net
+    
 
     logging:
       driver: json-file
