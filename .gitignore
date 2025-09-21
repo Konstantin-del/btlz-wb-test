@@ -3,3 +3,4 @@ node_modules
 .env
 dist
 package-praxis-surface-472507-m8-d0e040a43d1b
+.log
