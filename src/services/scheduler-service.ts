@@ -21,7 +21,7 @@ export class SchedulerService {
             return;
         }
 
-        console.log("Starting scheduler service");
+        logger.info("Starting scheduler service");
 
         // Ежечасное обновление тарифов (в 0 минут каждого часа)
         cron.schedule(
@@ -67,15 +67,15 @@ export class SchedulerService {
 
     private async updateTariffsTask(): Promise<void> {
         try {
-            console.log("Starting tariff update task");
+            logger.info("Starting tariff update task");
             const startTime = Date.now();
 
             await this.wbApiService.updateTariffs();
 
             const duration = Date.now() - startTime;
-            console.log(`Tariff update task completed in ${duration}ms`);
+            logger.info(`Tariff update task completed in ${duration}ms`);
         } catch (error) {
-            console.log("Tariff update task failed:", error);
+            logger.error("Tariff update task failed:", error);
         }
     }
 

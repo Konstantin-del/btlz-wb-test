@@ -1,42 +1,42 @@
 import knex, { migrate, seed } from "#postgres/knex.js";
 import { SchedulerService } from "#services/scheduler-service.js";
+import log4js from "log4js";
+
+const logger = log4js.getLogger("SCHEDULER_SERVICE");
 
 async function startApplication() {
     try {
-        console.log("Starting WB Tariffs Service...");
+        logger.info("Starting WB Tariffs Service...");
 
-        // Выполняем миграции
-        console.log("Running database migrations...");
+        logger.info("Running database migrations...");
         await migrate.latest();
         //await seed.run();
-        console.log("Database migrations completed");
+        logger.info("Database migrations completed");
 
-        // Запускаем планировщик
         const scheduler = new SchedulerService();
         scheduler.start();
 
-        console.log("WB Tariffs Service started successfully");
+        logger.info("WB Tariffs Service started successfully");
 
-        // Обработка сигналов для graceful shutdown
         process.on("SIGINT", () => {
-            console.log("Received SIGINT, shutting down gracefully...");
+            logger.info("Received SIGINT, shutting down gracefully...");
             scheduler.stop();
             knex.destroy().then(() => {
-                console.log("Database connection closed");
+                logger.info("Database connection closed");
                 process.exit(0);
             });
         });
 
         process.on("SIGTERM", () => {
-            console.log("Received SIGTERM, shutting down gracefully...");
+            logger.info("Received SIGTERM, shutting down gracefully...");
             scheduler.stop();
             knex.destroy().then(() => {
-                console.log("Database connection closed");
+                logger.info("Database connection closed");
                 process.exit(0);
             });
         });
     } catch (error) {
-        console.log("Failed to start application:", error);
+        logger.error("Failed to start application:", error);
         process.exit(1);
     }
 }

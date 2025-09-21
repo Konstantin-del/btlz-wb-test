@@ -15,15 +15,9 @@ export class WBApiService {
         this.token = env.WB_API_TOKEN;
     }
 
-    /**
-     * Получает тарифы коробов с API Wildberries
-     *
-     * @param date - Дата для получения тарифов (формат YYYY-MM-DD)
-     * @returns Promise с данными тарифов
-     */
     async getTariffs(date: string): Promise<WBTariffBox[]> {
         try {
-            console.log(`Fetching tariffs for date: ${date}`);
+            logger.info(`Fetching tariffs for date: ${date}`);
 
             const response: AxiosResponse<WBTariffBoxResponse> = await axios.get(this.baseUrl, {
                 headers: {
@@ -45,25 +39,17 @@ export class WBApiService {
 
             return warehouses;
         } catch (error) {
-            console.log("Error fetching tariffs from WB API:", error);
+            logger.error("Error fetching tariffs from WB API:", error);
             throw error;
         }
     }
 
-    /**
-     * Сохраняет тарифы в базу данных
-     *
-     * @param tariffs - Массив тарифов для сохранения
-     * @param fetchDate - Дата получения данных
-     */
     async saveTariffsToDB(tariffs: WBTariffBox[], fetchDate: string): Promise<void> {
         try {
             logger.info(`Saving ${tariffs.length} tariffs to database for date: ${fetchDate}`);
 
-            // Удаляем существующие записи за эту дату
             await knex("spreadsheets").where("fetch_date", fetchDate).del();
 
-            // Преобразуем данные в формат БД
             const dbTariffs: WBTariffBoxDB[] = tariffs.map((tariff) => ({
                 warehouse_name: tariff.warehouseName,
                 geo_name: tariff.geoName,
@@ -79,7 +65,6 @@ export class WBApiService {
                 fetch_date: fetchDate,
             }));
 
-            // Вставляем новые записи
             await knex("spreadsheets").insert(dbTariffs);
 
             logger.info(`Successfully saved ${tariffs.length} tariffs to database`);
@@ -88,8 +73,6 @@ export class WBApiService {
             throw error;
         }
     }
-
-    // Получает тарифы из базы данных за определенную дату
 
     async getTariffsFromDB(fetchDate: string): Promise<WBTariffBoxDB[]> {
         try {
@@ -103,12 +86,9 @@ export class WBApiService {
         }
     }
 
-    // Получает последние тарифы из базы данных
-
     async getLatestTariffsFromDB(): Promise<WBTariffBoxDB[]> {
         try {
             const latestDate = await knex("spreadsheets").max("fetch_date as latest_date").first();
-            console.log("++++++++", latestDate?.latest_date);
             if (!latestDate?.latest_date) {
                 logger.warn("No tariffs found in database");
                 return [];
@@ -125,15 +105,15 @@ export class WBApiService {
         const targetDate = new Date().toISOString().split("T")[0];
 
         try {
-            console.log(`Starting tariff update for date: ${targetDate}`);
+            logger.info(`Starting tariff update for date: ${targetDate}`);
 
             const tariffs = await this.getTariffs(targetDate);
 
             await this.saveTariffsToDB(tariffs, targetDate);
 
-            console.log(`Successfully updated tariffs for date: ${targetDate}`);
+            logger.info(`Successfully updated tariffs for date: ${targetDate}`);
         } catch (error) {
-            console.log(`Failed to update tariffs for date: ${targetDate}`, error);
+            logger.error(`Failed to update tariffs for date: ${targetDate}`, error);
             throw error;
         }
     }

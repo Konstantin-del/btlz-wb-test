@@ -1,7 +1,6 @@
 import { google } from "googleapis";
 import { WBTariffBoxDB } from "#types/wb-api.js";
 import env from "#config/env/env.js";
-import knex from "#postgres/knex.js";
 import log4js from "log4js";
 
 const logger = log4js.getLogger("GOOGLE_SHEETS_SERVICE");
@@ -19,7 +18,6 @@ export class GoogleSheetsService {
     private initializeGoogleSheets(): void {
         try {
             if (!env.GOOGLE_SHEETS_CREDENTIALS) {
-                console.log("Google Sheets credentials not provided, service will be disabled");
                 logger.warn("Google Sheets credentials not provided, service will be disabled");
                 return;
             }
@@ -31,17 +29,15 @@ export class GoogleSheetsService {
             });
 
             this.sheets = google.sheets({ version: "v4", auth });
-            console.log("Google Sheets API initialized successfully");
+            logger.info("Google Sheets API initialized successfully");
         } catch (error) {
-            console.log("Failed to initialize Google Sheets API:", error);
+            logger.error("Failed to initialize Google Sheets API:", error);
             throw error;
         }
     }
 
-    // Получает список ID таблиц из переменной окружения
     private getSpreadsheetIds(): string[] {
         if (!env.GOOGLE_SHEETS_SPREADSHEET_IDS) {
-            console.log("No Google Sheets IDs provided");
             logger.warn("No Google Sheets IDs provided");
             return [];
         }
@@ -49,11 +45,8 @@ export class GoogleSheetsService {
         return env.GOOGLE_SHEETS_SPREADSHEET_IDS.split(",").map((id) => id.trim());
     }
 
-    //  Обновляет данные в Google таблице
-
     async updateSpreadsheet(spreadsheetId: string, tariffs: WBTariffBoxDB[]): Promise<void> {
         if (!this.sheets) {
-            console.log("Google Sheets API not initialized, skipping update");
             logger.warn("Google Sheets API not initialized, skipping update");
             return;
         }
@@ -61,10 +54,8 @@ export class GoogleSheetsService {
         try {
             `Updating spreadsheet ${spreadsheetId} with ${tariffs.length} tariffs`;
 
-            // Подготавливаем данные для записи
             const values = this.prepareDataForSheets(tariffs);
 
-            // Обновляем лист stocks_coefs
             await this.sheets.spreadsheets.values.update({
                 spreadsheetId,
                 range: "stocks_coefs!A1",
@@ -74,9 +65,9 @@ export class GoogleSheetsService {
                 },
             });
 
-            console.log(`Successfully updated spreadsheet ${spreadsheetId}`);
+            logger.info(`Successfully updated spreadsheet ${spreadsheetId}`);
         } catch (error) {
-            console.log(`Error updating spreadsheet ${spreadsheetId}:`, error);
+            logger.error(`Error updating spreadsheet ${spreadsheetId}:`, error);
             throw error;
         }
     }
@@ -124,14 +115,14 @@ export class GoogleSheetsService {
                 return;
             }
 
-            console.log(`Updating ${allSpreadsheetIds.length} spreadsheets`);
+            logger.info(`Updating ${allSpreadsheetIds.length} spreadsheets`);
 
             const updatePromises = allSpreadsheetIds.map((spreadsheetId) => this.updateSpreadsheet(spreadsheetId, tariffs));
 
             await Promise.all(updatePromises);
-            console.log("Successfully updated all spreadsheets");
+            logger.info("Successfully updated all spreadsheets");
         } catch (error) {
-            console.log("Error updating spreadsheets:", error);
+            logger.error("Error updating spreadsheets:", error);
             throw error;
         }
     }
